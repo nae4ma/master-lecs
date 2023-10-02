@@ -192,7 +192,7 @@ class RNNEncDec(torch.nn.Module):
 
 ## 学習
 def train():
-  model = LSTMEncDec(vocablist_en, vocabidx_en, vocablist_ja, vocabidx_ja).to(DEVICE)
+  model = RNNMEncDec(vocablist_en, vocabidx_en, vocablist_ja, vocabidx_ja).to(DEVICE)
   optimizer = torch.optim.Adam(model.parameters(), lr=LR) #Adamを使用
 
   for epoch in range(EPOCH):
