@@ -129,65 +129,6 @@ train_data =[([[vocabidx_en[token] for token in tokenlist] for tokenlist in ben]
               [[vocabidx_ja[token] for token in tokenlist] for tokenlist in bja]) for ben, bja in train_data]
 test_data =[([vocabidx_en[token] for token in enprep], en, ja) for enprep, en, ja in test_data]
 
-## エンコーダ・デコーダRNN
-class RNNEncDec(torch.nn.Module):
-  def __init__(self, vocablist_x, vocabidx_x, vocablist_y, vocabidx_y):
-    super(RNNEncDec, self).__init__()
-
-    # encoder
-    self.encemb = torch.nn.Embedding(len(vocablist_x), 300, padding_idx=vocabidx_x['<pad>'])
-    self.encrcnn = torch.nn.Linear(300, 300)
-
-    # decoder
-    self.decemb = torch.nn.Embedding(len(vocablist_y), 300, padding_idx=vocabidx_y['<pad>'])
-    self.decrcnn = torch.nn.Linear(300, 300)
-    self.decout = torch.nn.Linear(300, len(vocablist_y))
-
-  def forward(self, x):
-    x, y = x[0], x[1]
-    # encoder
-    e_x = self.encemb(x)
-    n_x = e_x.size()[0]
-    h = torch.zeros(300, dtype=torch.float32).to(DEVICE)
-    for i in range(n_x):
-      h = F.relu(e_x[i] + self.encrcnn(h))
-
-    # decoder
-    e_y = self.decemb(y)
-    n_y = e_y.size()[0]
-    loss = torch.tensor(0., dtype=torch.float32).to(DEVICE)
-
-    for i in range(n_y - 1):
-      h = F.relu(e_y[i] + self.decrcnn(h))
-      loss += F.cross_entropy(self.decout(h), y[i+1]) #損失を計算
-
-    return loss
-
-  # evaluate
-  def evaluate(self, x, vocablist_y, vocabidx_y):
-    #encoder
-    e_x = self.encemb(x)
-    n_x = e_x.size()[0]
-    h = torch.zeros(300, dtype=torch.float32).to(DEVICE)
-    for i in range(n_x):
-      h= F.relu(e_x[i] + self.encrcnn(h))
-
-    #decoder
-    y = torch.tensor([vocabidx_y['<cls>']]).to(DEVICE)
-    e_y = self.decemb(y)
-    pred = []
-    for i in range(30):
-      h = F.relu(e_y + self.decrcnn(h))
-      pred_id = self.decout(h).squeeze().argmax()
-      if pred_id == vocabidx_y['<eos>']:
-        break
-      pred_y = vocablist_y[pred_id][0]
-      pred.append(pred_y)
-      y[0] = pred_id
-      e_y = self.decemb(y)
-
-    return pred
-
 ## エンコーダ・デコーダLSTM
 class LSTMEncDec(torch.nn.Module):
   def __init__(self, vocablist_x, vocabidx_x, vocablist_y, vocabidx_y):
