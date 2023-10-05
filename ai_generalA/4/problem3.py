@@ -25,7 +25,6 @@ for i in range(10):
 print("# of line", len(train_en), len(train_ja), len(train_en), len(train_ja))
 
 ## グローバル変数設定
-#MODELNAME="tanaka-enja-rnn.model"
 MODELNAME="tanaka-enja-lstm.model"
 EPOCH = 20
 BATCHSIZE = 128
@@ -63,8 +62,6 @@ def make_vocab(train_data, min_freq):
 
 vocablist_en, vocabidx_en = make_vocab(train_en, 3)  #min_freq = 3
 vocablist_ja, vocabidx_ja = make_vocab(train_ja, 3)  #min_freq = 3
-
-print("vocab")
 
 ## 未言語処理
 
@@ -136,11 +133,11 @@ class LSTMEncDec(torch.nn.Module):
 
     # encoder
     self.encemb = torch.nn.Embedding(len(vocablist_x), 256, padding_idx=vocabidx_x['<pad>'])
-    self.encrcnn = torch.nn.LSTM(256, 516, 2, dropout=0.5)
+    self.encrnn = torch.nn.LSTM(256, 516, 2, dropout=0.5)
 
     # decoder
     self.decemb = torch.nn.Embedding(len(vocablist_y), 256, padding_idx=vocabidx_y['<pad>'])
-    self.decrcnn = torch.nn.LSTM(256, 516, 2, dropout=0.5)
+    self.decrnn = torch.nn.LSTM(256, 516, 2, dropout=0.5)
     self.decout = torch.nn.Linear(516, len(vocablist_y))
 
     # dropout
@@ -152,7 +149,7 @@ class LSTMEncDec(torch.nn.Module):
     e_x = self.encemb(x)
     e_x = self.dropout(e_x)
 
-    out, (h,c) = self.encrcnn(e_x)
+    out, (h,c) = self.encrnn(e_x)
 
     # decoder
     e_y = self.decemb(y)
@@ -160,7 +157,7 @@ class LSTMEncDec(torch.nn.Module):
     n_y = e_y.size()[0]
 
     loss = torch.tensor(0., dtype=torch.float32).to(DEVICE)
-    out, (h,c) = self.decrcnn(e_y[:-1], (h,c))
+    out, (h,c) = self.decrnn(e_y[:-1], (h,c))
 
     for i in range(n_y - 1):
       loss += F.cross_entropy(self.decout(out[i]), y[i+1]) #損失を計算
@@ -174,7 +171,7 @@ class LSTMEncDec(torch.nn.Module):
     e_x = self.dropout(e_x)
     n_x = e_x.size()[0]
 
-    out, (h,c) = self.encrcnn(e_x)
+    out, (h,c) = self.encrnn(e_x)
 
     #decoder
     y = torch.tensor([vocabidx_y['<cls>']]).to(DEVICE)
@@ -183,7 +180,7 @@ class LSTMEncDec(torch.nn.Module):
     for i in range(50):
       e_y = self.decemb(y).unsqueeze(0)
       e_y = self.dropout(e_y)
-      out, (h,c) = self.decrcnn(e_y, (h,c))
+      out, (h,c) = self.decrnn(e_y, (h,c))
 
       pred_id = self.decout(out).squeeze().argmax()
       if pred_id == vocabidx_y['<eos>']:
@@ -230,7 +227,7 @@ def test():
     input = torch.tensor([enprep], dtype=torch.int64).transpose(0,1).to(DEVICE)
     p = model.evaluate(input, vocablist_ja, vocabidx_ja)
 
-    if len(ref) < 20:
+    if len(ref) < 10:
       print("INPUT;", en)
       print("REF;", ja)
       print("MT;", p)
@@ -244,5 +241,5 @@ def test():
   print("total:", len(test_data))
   print("bleu:", bleu)
 
-#train()
+train()
 test()
