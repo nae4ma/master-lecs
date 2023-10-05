@@ -16,7 +16,6 @@ for i in range(10):
 print("# of line", len(train_en), len(train_ja), len(train_en), len(train_ja))
 
 ## グローバル変数設定
-#MODELNAME="tanaka-enja-rnn.model"
 MODELNAME="tanaka-enja-rnn.model"
 EPOCH = 10
 BATCHSIZE = 128
